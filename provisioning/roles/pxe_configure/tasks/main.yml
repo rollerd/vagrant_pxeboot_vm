@@ -1,0 +1,99 @@
+---
+# Our Ubuntu netboot archive has all of the needed files, so we have commented this out, but it could be used for other images
+# See https://www.unixmen.com/install-pxe-server-and-configure-pxe-client-on-centos-7/
+
+#- name: Copy pxe-related files on target
+#  copy:
+#    src: /usr/share/syslinux/{{ item }}
+#    dest: /var/lib/tftpboot/
+#    remote_src: yes
+#  with_items:
+#    - pxelinux.0
+#    - menu.c32
+#    - memdisk
+#    - mboot.c32
+#    - chain.c32
+
+- name: Copy tftp server config file to server
+  copy:
+    src: tftp.conf
+    dest: /etc/xinetd.d/tfpt
+
+- name: Create and copy httpd conf template to server
+  template:
+    src: pxeboot.conf.j2
+    dest: /etc/httpd/conf.d/pxeboot.conf
+    mode: 0644
+
+#- name: Create OS directory - /var/lib/tftpboot/{{ os_name }}
+#  file:
+#    path: /var/lib/tftpboot/{{ os_name }}
+#    state: directory
+#    mode: 0755
+#
+#- name: Mount OS iso file defined in defaults to /var/lib/tftpboot/{{ os_name }}
+#  mount:
+#    path: /var/lib/tftpboot/{{ os_name }}
+#    src: /vagrant/isos/{{ iso_filename }}
+#    state: mounted
+#    opts: loop
+#
+#- name: Create pxelinux.cfg directory
+#  file:
+#    path: /var/lib/tftpboot/pxelinux.cfg
+#    state: directory
+#    mode: 0644
+#
+#- name: Copy default pxelinux config template to /var/lib/tftpboot/pxelinux.cfg/default
+#  template:
+#    src: default.j2
+#    dest: /var/lib/tftpboot/pxelinux.cfg/default
+#    mode: 0644
+#
+#- name: Install dhcp server
+#  yum:
+#    name: "{{ item }}"
+#    state: latest
+#  with_items:
+#    - dhcp-common
+#    - dhcp
+#
+#- name: Copy dhcpd conf template to server
+#  template:
+#    src: dhcpd.conf.j2
+#    dest: /etc/dhcp/dhcpd.conf
+
+- name: Copy and un-tar Ubuntu netboot installer
+  unarchive:
+    src: /vagrant/isos/{{ netboot_installer_archive }}
+    dest: /var/lib/tftpboot
+    remote_src: yes
+  when: (ubuntu_netboot)
+
+- name: Restart xinetd
+  service:
+    name: xinetd
+    state: restarted
+    enabled: yes
+
+- name: Restart httpd
+  service:
+    name: httpd
+    state: restarted
+    enabled: yes
+
+#- name: Restart dhcpd
+#  service:
+#    name: dhcpd
+#    state: restarted
+
+- name: Stop firewalld
+  service:
+    name: firewalld
+    state: stopped
+    enabled: no
+
+- name: Set SELinux to permissive mode
+  selinux:
+    policy: targeted
+    state: permissive

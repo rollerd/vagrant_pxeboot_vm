@@ -1,0 +1,4 @@
+---
+os_name: ubuntu-installer
+iso_filename: ubuntu-17.10-desktop-amd64.iso
+netboot_installer_archive: netboot.tar.gz

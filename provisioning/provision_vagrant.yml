@@ -1,0 +1,7 @@
+---
+- name: Configure PXEboot box
+  hosts: all
+  become: yes
+  roles:
+    - { role: yum_packages, tags: ['yum'] }
+    - { role: pxe_configure, tags: ['pxe'], ubuntu_netboot: true }

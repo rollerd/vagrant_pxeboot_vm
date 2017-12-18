@@ -1,0 +1,11 @@
+#
+# DHCP Server Configuration file.
+#   see /usr/share/doc/dhcp*/dhcpd.conf.example
+#   see dhcpd.conf(5) man page
+#
+allow booting;
+allow bootp;
+option option-128 code 128 = string;
+option option-129 code 129 = text;
+next-server {{ ansible_enp0s8["ipv4"]["address"] }} ;
+filename "pxelinux.0";

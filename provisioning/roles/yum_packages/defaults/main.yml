@@ -1,0 +1,2 @@
+---
+required_packages: [httpd, xinetd, syslinux, tftp-server]
