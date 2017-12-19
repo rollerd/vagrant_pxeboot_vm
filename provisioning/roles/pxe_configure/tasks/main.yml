@@ -1,55 +1,18 @@
 ---
-# Our Ubuntu netboot archive has all of the needed files, so we have commented this out, but it could be used for other images
 # See https://www.unixmen.com/install-pxe-server-and-configure-pxe-client-on-centos-7/
-
-#- name: Copy pxe-related files on target
-#  copy:
-#    src: /usr/share/syslinux/{{ item }}
-#    dest: /var/lib/tftpboot/
-#    remote_src: yes
-#  with_items:
-#    - pxelinux.0
-#    - menu.c32
-#    - memdisk
-#    - mboot.c32
-#    - chain.c32
 
 - name: Copy tftp server config file to server
   copy:
     src: tftp.conf
     dest: /etc/xinetd.d/tfpt
 
-- name: Create and copy httpd conf template to server
-  template:
-    src: pxeboot.conf.j2
+- name: Copy pxeboot httpd conf to server
+  copy:
+    src: pxeboot.conf
     dest: /etc/httpd/conf.d/pxeboot.conf
     mode: 0644
 
-#- name: Create OS directory - /var/lib/tftpboot/{{ os_name }}
-#  file:
-#    path: /var/lib/tftpboot/{{ os_name }}
-#    state: directory
-#    mode: 0755
-#
-#- name: Mount OS iso file defined in defaults to /var/lib/tftpboot/{{ os_name }}
-#  mount:
-#    path: /var/lib/tftpboot/{{ os_name }}
-#    src: /vagrant/isos/{{ iso_filename }}
-#    state: mounted
-#    opts: loop
-#
-#- name: Create pxelinux.cfg directory
-#  file:
-#    path: /var/lib/tftpboot/pxelinux.cfg
-#    state: directory
-#    mode: 0644
-#
-#- name: Copy default pxelinux config template to /var/lib/tftpboot/pxelinux.cfg/default
-#  template:
-#    src: default.j2
-#    dest: /var/lib/tftpboot/pxelinux.cfg/default
-#    mode: 0644
-#
+## Optional DHCP server 
 #- name: Install dhcp server
 #  yum:
 #    name: "{{ item }}"
@@ -63,13 +26,153 @@
 #    src: dhcpd.conf.j2
 #    dest: /etc/dhcp/dhcpd.conf
 
-- name: Copy and un-tar Ubuntu netboot installer
-  unarchive:
-    src: /vagrant/isos/{{ netboot_installer_archive }}
-    dest: /var/lib/tftpboot
-    remote_src: yes
-  when: (ubuntu_netboot)
 
+### Gentoo Config ###
+- block:
+
+  - name: Copy required files to tftpboot dir
+    copy:
+      src: /usr/share/syslinux/{{ item }}
+      dest: /var/lib/tftpboot/{{ item }}
+      remote_src: yes
+    with_items:
+      - pxelinux.0
+      - menu.c32
+
+  - name: Create gentoo directory in tftpboot dir
+    file:
+      path: /var/lib/tftpboot/gentoo
+      state: directory
+
+  - name: Download Gentoo minimal iso
+    get_url:
+      url: "{{ gentoo_minimal_url }}"
+      dest: /tmp/{{ gentoo_minimal_archive }}
+
+  - name: Create /mnt directory if it doesnt exist
+    file:
+      path: /mnt
+      state: directory
+
+  - name: Mount Gentoo image
+    mount:
+      path: /mnt/dvd
+      src: /tmp/{{ gentoo_minimal_archive }}
+      fstype: iso9660
+      opts: ro
+      state: mounted
+
+  - name: Create temp workspace dir
+    file:
+      path: /tmp/workspace
+      state: directory
+
+  - name: Copy files to workspace dir 
+    copy:
+      src: "{{ item }}"
+      dest: /tmp/workspace
+      remote_src: yes
+    with_items:
+      - /mnt/dvd/isolinux/gentoo.igz
+      - /mnt/dvd/image.squashfs
+
+  - name: Unarchive files from initramfs
+    shell: xz -d -c gentoo.igz | cpio -idv
+    args:
+      chdir: /tmp/workspace
+      executable: /bin/bash
+
+  - name: Copy init patch script to server
+    copy:
+      src: gentoo_init_script.patch
+      dest: /tmp/workspace
+
+  - name: Patch init file
+    shell: patch init gentoo_init_script.patch
+    args:
+      chdir: /tmp/workspace
+      executable: /bin/bash
+
+  - name: Create /mnt/cdrom inside initramfs
+    file:
+      path: /tmp/workspace/mnt/cdrom
+      state: directory
+
+  - name: Copy image.squashfs to mnt/cdrom in initramfs
+    copy:
+      src: /tmp/workspace/image.squashfs
+      dest: /tmp/workspace/mnt/cdrom/image.squashfs
+      remote_src: yes
+
+  - name: Create initramfs archive
+    shell: find . -print | cpio -o -H newc |gzip -9 -c - > /var/lib/tftpboot/gentoo/initramfs.gz
+    args:
+      chdir: /tmp/workspace
+      executable: /bin/bash
+
+  - name: Copy Gentoo kernal to tftpboot dir
+    copy:
+      src: /mnt/dvd/isolinux/gentoo
+      dest: /var/lib/tftpboot/gentoo/gentoo
+      remote_src: yes
+
+  - name: Copy image.squashfs to tftpboot dir
+    copy:
+      src: /mnt/dvd/image.squashfs
+      dest: /var/lib/tftpboot/gentoo/image.squashfs
+      remote_src: yes
+
+  - name: Create pxelinux.cfg directory
+    file:
+      path: /var/lib/tftpboot/pxelinux.cfg
+      state: directory
+
+  - name: Copy default pxeconfig file to pxelinux.cfg dir
+    copy:
+      src: default
+      dest: /var/lib/tftpboot/pxelinux.cfg/default
+
+  - name: Unmount gentoo minimal iso
+    mount:
+      path: /mnt/dvd
+      state: absent
+
+  - name: Set permissions on gentoo dir
+    file:
+      path: /var/lib/tftpboot/gentoo
+      state: directory
+      mode: 0755
+
+  - name: Register files in /tmp directory
+    shell: ls -al /tmp
+    register: tmpcontents
+  
+  - name: Delete files in /tmp
+    file:
+      path: /tmp/{{ item }}
+      state: absent
+    with_items: "{{ tmpcontents.stdout_lines }}"
+
+  when: (gentoo_image)
+
+### Ubuntu Config ###
+- block:
+
+  - name: Create ubuntu directory under tftpboot dir
+    file:
+      path: /var/lib/tftpboot/ubuntu
+      state: directory
+      mode: 0644
+
+  - name: Download and unarchive ubuntu netboot
+    unarchive:
+      src: "{{ ubuntu_netboot_url }}"
+      dest: /var/lib/tftpboot/ubuntu
+      remote_src: yes
+    
+  when: (ubuntu_image)
+
+### Service restarts ###
 - name: Restart xinetd
   service:
     name: xinetd
@@ -82,6 +185,7 @@
     state: restarted
     enabled: yes
 
+## Optional DHCP server
 #- name: Restart dhcpd
 #  service:
 #    name: dhcpd

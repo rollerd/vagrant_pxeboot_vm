@@ -1,2 +1,2 @@
-# If you wish to test with the Ubuntu install, you can download the netboot archive from: http://archive.ubuntu.com/ubuntu/dists/artful/main/installer-amd64/current/images/netboot/netboot.tar.gz
-# Just download to this directory
+# Optionally download images here and modify/create roles for PXE booting them
+# Directory is synced with guest VM at /vagrant/isos (on guest)

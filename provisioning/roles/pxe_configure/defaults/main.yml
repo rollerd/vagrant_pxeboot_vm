@@ -1,4 +1,6 @@
 ---
-os_name: ubuntu-installer
-iso_filename: ubuntu-17.10-desktop-amd64.iso
-netboot_installer_archive: netboot.tar.gz
+ubuntu_netboot_url: http://archive.ubuntu.com/ubuntu/dists/artful/main/installer-amd64/current/images/netboot/netboot.tar.gz
+ubuntu_netboot_archive: netboot.tar.gz
+
+gentoo_minimal_url: http://distfiles.gentoo.org/releases/amd64/autobuilds/20170907/install-amd64-minimal-20170907.iso
+gentoo_minimal_archive: install-amd64-minimal-20170907.iso
