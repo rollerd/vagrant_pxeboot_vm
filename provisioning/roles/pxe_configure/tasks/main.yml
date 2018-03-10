@@ -155,7 +155,7 @@
 
   when: (gentoo_image)
 
-### Ubuntu Config ###
+### Ubuntu Xenial Config ###
 - block:
 
   - name: Create ubuntu directory under tftpboot dir
@@ -171,6 +171,22 @@
       remote_src: yes
     
   when: (ubuntu_image)
+
+- block:
+
+  - name: Create ubuntu-xenial directory under tftpboot dir
+    file:
+      path: /var/lib/tftpboot/ubuntu-xenial
+      state: directory
+      mode: 0644
+
+  - name: Download and unarchive ubuntu xenial netboot
+    unarchive:
+      src: "{{ ubuntu_netboot_xenial_url }}"
+      dest: /var/lib/tftpboot/ubuntu-xenial
+      remote_src: yes
+    
+  when: (ubuntu_xenial_image)
 
 ### Service restarts ###
 - name: Restart xinetd

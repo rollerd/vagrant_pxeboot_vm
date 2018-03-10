@@ -4,4 +4,4 @@
   become: yes
   roles:
     - { role: yum_packages, tags: ['yum'] }
-    - { role: pxe_configure, tags: ['pxe'], ubuntu_image: true, gentoo_image: true }
+    - { role: pxe_configure, tags: ['pxe'], ubuntu_image: true, gentoo_image: true, ubuntu_xenial_image: true }

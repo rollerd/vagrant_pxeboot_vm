@@ -14,3 +14,8 @@ label 2
 menu label ^2) Gentoo
 kernel gentoo/gentoo
 append initrd=gentoo/initramfs.gz root=/dev/ram0 init=/linuxrc loop=/image.squashfs looptype=squashfs cdroot=1 real_root=/
+
+label 3
+menu label ^1) UBUNTU-XENIAL
+kernel ubuntu-xenial/ubuntu-installer/amd64/linux
+append vga=788 initrd=ubuntu-xenial/ubuntu-installer/amd64/initrd.gz
