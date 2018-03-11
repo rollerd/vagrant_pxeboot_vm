@@ -12,6 +12,20 @@
     dest: /etc/httpd/conf.d/pxeboot.conf
     mode: 0644
 
+- name: Copy required files to tftpboot dir
+  copy:
+    src: /usr/share/syslinux/{{ item }}
+    dest: /var/lib/tftpboot/{{ item }}
+    remote_src: yes
+  with_items:
+    - pxelinux.0
+    - menu.c32
+
+- name: Copy default pxeconfig file to pxelinux.cfg dir
+  copy:
+    src: default
+    dest: /var/lib/tftpboot/pxelinux.cfg/default
+
 ## Optional DHCP server 
 #- name: Install dhcp server
 #  yum:
@@ -26,18 +40,8 @@
 #    src: dhcpd.conf.j2
 #    dest: /etc/dhcp/dhcpd.conf
 
-
 ### Gentoo Config ###
 - block:
-
-  - name: Copy required files to tftpboot dir
-    copy:
-      src: /usr/share/syslinux/{{ item }}
-      dest: /var/lib/tftpboot/{{ item }}
-      remote_src: yes
-    with_items:
-      - pxelinux.0
-      - menu.c32
 
   - name: Create gentoo directory in tftpboot dir
     file:
@@ -127,11 +131,6 @@
       path: /var/lib/tftpboot/pxelinux.cfg
       state: directory
 
-  - name: Copy default pxeconfig file to pxelinux.cfg dir
-    copy:
-      src: default
-      dest: /var/lib/tftpboot/pxelinux.cfg/default
-
   - name: Unmount gentoo minimal iso
     mount:
       path: /mnt/dvd
@@ -158,19 +157,19 @@
 ### Ubuntu Artful Config ###
 - block:
 
-  - name: Create ubuntu directory under tftpboot dir
+  - name: Create ubuntu-artful directory under tftpboot dir
     file:
-      path: /var/lib/tftpboot/ubuntu
+      path: /var/lib/tftpboot/ubuntu-artful
       state: directory
       mode: 0644
 
-  - name: Download and unarchive ubuntu netboot
+  - name: Download and unarchive ubuntu-artful netboot
     unarchive:
       src: "{{ ubuntu_netboot_url }}"
-      dest: /var/lib/tftpboot/ubuntu
+      dest: /var/lib/tftpboot/ubuntu-artful
       remote_src: yes
     
-  when: (ubuntu_image)
+  when: (ubuntu_artful_image)
 
 ### Ubuntu Xenial Config ###
 - block:
@@ -181,7 +180,7 @@
       state: directory
       mode: 0644
 
-  - name: Download and unarchive ubuntu xenial netboot
+  - name: Download and unarchive ubuntu-xenial netboot
     unarchive:
       src: "{{ ubuntu_netboot_xenial_url }}"
       dest: /var/lib/tftpboot/ubuntu-xenial
