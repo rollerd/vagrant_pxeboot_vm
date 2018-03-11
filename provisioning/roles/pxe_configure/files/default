@@ -6,7 +6,7 @@ ONTIMEOUT local
 menu title ########## PXE Boot Menu ##########
 
 label 1
-menu label ^1) UBUNTU
+menu label ^1) UBUNTU-ARTFUL
 kernel ubuntu/ubuntu-installer/amd64/linux
 append vga=788 initrd=ubuntu/ubuntu-installer/amd64/initrd.gz
 

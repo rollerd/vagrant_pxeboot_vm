@@ -1,4 +1,4 @@
-# CentOS7 Vagrant VM with plays for configuring as a PXE boot server
+# CentOS7 Vagrant VM with roles for configuring as a PXE boot server
 
 ---
 ### What is this

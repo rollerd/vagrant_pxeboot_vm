@@ -155,7 +155,7 @@
 
   when: (gentoo_image)
 
-### Ubuntu Xenial Config ###
+### Ubuntu Artful Config ###
 - block:
 
   - name: Create ubuntu directory under tftpboot dir
@@ -172,6 +172,7 @@
     
   when: (ubuntu_image)
 
+### Ubuntu Xenial Config ###
 - block:
 
   - name: Create ubuntu-xenial directory under tftpboot dir
